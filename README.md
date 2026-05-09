@@ -1,1 +1,1 @@
-![Scheme IRL](/docs/img/generator.jpg)
+![Scheme IRL](/docs/img/converter.jpg)
