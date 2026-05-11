@@ -1,0 +1,13 @@
+#pragma once
+
+#define FW_VERSION_MAJOR  1
+#define FW_VERSION_MINOR  1
+#define FW_VERSION_PATCH  1
+
+#define FW_VERSION_STR \
+    STRINGIFY(FW_VERSION_MAJOR) "." \
+    STRINGIFY(FW_VERSION_MINOR) "." \
+    STRINGIFY(FW_VERSION_PATCH)
+
+#define STRINGIFY(x)   STRINGIFY_(x)
+#define STRINGIFY_(x)  #x

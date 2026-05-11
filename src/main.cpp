@@ -1,39 +1,16 @@
 #include <Arduino.h>
 #include "driver/ledc.h"
 #include "esp_timer.h"
+#include "config.h"
+#include "version.h"
+
+#ifdef USE_DISPLAY
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-// ── Пины PWM ──────────────────────────────────────
-#define PIN_PWM_IN   2
-#define PIN_PWM_OUT  3
-
-// ── Пины I2C (SSD1306) ────────────────────────────
-#define PIN_SDA      7
-#define PIN_SCL      6
-
-// ── Диапазоны ─────────────────────────────────────
-#define IN_MIN   1000
-#define IN_MAX   2000
-#define OUT_MIN  500 
-#define OUT_MAX  2500
-
-#define SANITY_MIN  (OUT_MIN - 100)   // 400
-#define SANITY_MAX  (OUT_MAX + 100)   // 2600
-
-// ── LEDC ──────────────────────────────────────────
-#define LEDC_TIMER      LEDC_TIMER_0
-#define LEDC_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_RES        LEDC_TIMER_14_BIT
-#define SERVO_HZ        50
-
-// ── Дисплей ───────────────────────────────────────
-#define SCREEN_W    128
-#define SCREEN_H     64
-#define OLED_ADDR  0x3C
-
 Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
+#endif
 
 // ── Состояние входного PWM ────────────────────────
 volatile uint32_t pwm_rise_us = 0;
@@ -65,6 +42,7 @@ static inline uint32_t us_to_duty(uint16_t us) {
 }
 
 // ── Отрисовка дисплея ─────────────────────────────
+#ifdef USE_DISPLAY
 void updateDisplay(uint16_t in_us, uint16_t out_us) {
     display.clearDisplay();
 
@@ -108,11 +86,13 @@ void updateDisplay(uint16_t in_us, uint16_t out_us) {
 
     display.display();
 }
+#endif // USE_DISPLAY
 
 void setup() {
     Serial.begin(115200);
     delay(1000);
 
+#ifdef USE_DISPLAY
     // I2C на кастомных пинах
     Wire.begin(PIN_SDA, PIN_SCL);
 
@@ -123,6 +103,7 @@ void setup() {
     }
     display.clearDisplay();
     display.display();
+#endif // USE_DISPLAY
 
     // LEDC таймер
     ledc_timer_config_t timer_cfg = {
@@ -149,6 +130,13 @@ void setup() {
     pinMode(PIN_PWM_IN, INPUT);
     attachInterrupt(digitalPinToInterrupt(PIN_PWM_IN), onPwmEdge, CHANGE);
 
+    Serial.println("FW v" FW_VERSION_STR
+#ifdef USE_DISPLAY
+        " [display: ON]"
+#else
+        " [display: OFF]"
+#endif
+    );
     Serial.println("Ready");
 }
 
@@ -159,7 +147,9 @@ void loop() {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL, us_to_duty(out));
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL);
 
+#ifdef USE_DISPLAY
     updateDisplay(in, out);
+#endif
 
     Serial.printf("in: %4d us  ->  out: %4d us\n", in, out);
     delay(50);  // ~20 fps на дисплее, серво успевает
